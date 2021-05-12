@@ -1,7 +1,7 @@
-# azure-cosmosdb-gemlin-bulkloader-sample-data
+# azure-cosmosdb-gremlin-bulkloader-sample-data
 
 This is the companion repository for
-[azure-cosmosdb-gemlin-bulkloader](https://github.com/cjoakim/azure-cosmosdb-gemlin-bulkloader).
+[azure-cosmosdb-gremlin-bulkloader](https://github.com/cjoakim/azure-cosmosdb-gremlin-bulkloader).
 
 It contains **CSV** files for graphs which can be loaded into 
 **Azure CosmosDB, Graph API** via the **Bulk Loader**.
