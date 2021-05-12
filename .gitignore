@@ -17,6 +17,7 @@ man/
 
 imdb_wrangling/data/
 
+backup.xml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
