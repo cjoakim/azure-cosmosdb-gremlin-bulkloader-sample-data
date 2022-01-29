@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # Data-wrangling process for the IMDb Azure CosmosDB BulkLoad dataset.
-# Chris Joakim, Microsoft, May 2021
+# Chris Joakim, Microsoft, January 2022
 
 footloose="tt0087277"
 kevinbacon="nm0000102"
 
-# rm data/*.csv
+source venv/bin/activate
+python --version
 
 date 
 

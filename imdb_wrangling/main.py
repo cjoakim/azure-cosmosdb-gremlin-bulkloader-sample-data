@@ -14,8 +14,10 @@ import pandas as pd
 #    Movies since 1980, 100-minutes or longer, actors and actresses.
 # 2) Transform the subset csv files into the csv format required by
 #    the Azure CosmosDB Graph BulkLoader program.
+# 3) Transform the BulkLoader csv into csv for loading to Spark GraphFrames.
+#    Added January 2022 for Azure Synapse Link GraphFrames
 #
-# Chris Joakim, Microsoft, 2021/05/07
+# Chris Joakim, Microsoft, January 2022
 
 # Interesting values:
 #   tt0087277 Footloose
@@ -31,6 +33,7 @@ FILTERED_MOVIES='data/filtered_movies.csv'
 JOINED_MOVIES_TO_PRINCIPALS='data/joined_movies_to_principals.csv'
 JOINED_NAMES_TO_PRINCIPALS='data/joined_names_to_principals.csv'
 UNIQUE_PRINCIPALS='data/unique_principals.csv'
+
 
 def filter_title_principals():
     print('=== filter_title_principals...')
@@ -275,6 +278,103 @@ def create_person_to_movie_edges():
                 epoch = time.time()
                 print('{},{},{},{},{},{},{},{},{},{}'.format(id_pk, id_pk, 'is_in', nconst, nconst, 'Person', tconst, tconst, 'Movie', epoch))
 
+def graphframes_movie_vertices():
+    # python main.py graphframes_movie_vertices loader_movie_vertices.csv > ../imdb/graphframes_movie_vertices.csv
+    #
+    # Id,Pk,Label,Title,Year:int,Minutes:int
+    # tt0015724,tt0015724,Movie,Dama de noche,1993,102
+    
+    github_dir = os.environ['GITHUB_DIR']
+    repo_path  = 'azure-cosmosdb-gremlin-bulkloader-sample-data/imdb'
+    basename   = sys.argv[2] 
+    infile     = '{}/{}/{}'.format(github_dir, repo_path, basename)
+
+    with open(infile, 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for row_idx, row in enumerate(reader):
+            # ['Id', 'Pk', 'Label', 'Title', 'Year:int', 'Minutes:int']
+            if (row_idx == 0):
+                print('id|label|name|attributes')
+            else:
+                id    = row[0]
+                label = row[2]
+                name  = row[3]
+                attrs = dict()
+                attrs['year'] = int(row[4])
+                attrs['minutes'] = int(row[5])
+                attrs['row_idx'] = row_idx
+                print('{}|{}|{}|{}'.format(id, label, name, json.dumps(attrs)))
+
+def graphframes_person_vertices():
+    # python main.py graphframes_person_vertices loader_person_vertices.csv > ../imdb/graphframes_person_vertices.csv
+    #
+    # Id,Pk,Label,Name
+    # nm0844752,nm0844752,Person,Rafael Sánchez Navarro
+    
+    github_dir = os.environ['GITHUB_DIR']
+    repo_path  = 'azure-cosmosdb-gremlin-bulkloader-sample-data/imdb'
+    basename   = sys.argv[2] 
+    infile     = '{}/{}/{}'.format(github_dir, repo_path, basename)
+
+    with open(infile, 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for row_idx, row in enumerate(reader):
+            if (row_idx == 0):
+                print('id|label|name|attributes')
+            else:
+                id    = row[0]
+                label = row[2]
+                name  = row[3]
+                attrs = dict()
+                attrs['row_idx'] = row_idx
+                print('{}|{}|{}|{}'.format(id, label, name, json.dumps(attrs)))
+
+def graphframes_edges():
+    # python main.py graphframes_edges loader_movie_to_person_edges.csv > ../imdb/graphframes_movie_to_person_edges.csv
+    # python main.py graphframes_edges loader_person_to_movie_edges.csv > ../imdb/graphframes_person_to_movie_edges.csv
+
+    # EdgeId,EdgePk,EdgeLabel,FromVertexId,FromVertexPk,FromVertexLabel,ToVertexId,ToVertexPk,ToVertexLabel,epoch:double
+    # tt0015724-nm0844752,tt0015724-nm0844752,has_person,tt0015724,tt0015724,Movie,nm0844752,nm0844752,Person,1620420702.180296
+
+    # EdgeId,EdgePk,EdgeLabel,FromVertexId,FromVertexPk,FromVertexLabel,ToVertexId,ToVertexPk,ToVertexLabel,epoch:double
+    # nm0844752-tt0015724,nm0844752-tt0015724,is_in,nm0844752,nm0844752,Person,tt0015724,tt0015724,Movie,1620420703.6033332
+    
+    github_dir = os.environ['GITHUB_DIR']
+    repo_path  = 'azure-cosmosdb-gremlin-bulkloader-sample-data/imdb'
+    basename   = sys.argv[2] 
+    infile     = '{}/{}/{}'.format(github_dir, repo_path, basename)
+
+    with open(infile, 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for row_idx, row in enumerate(reader):
+            #     0         1           2             3               4                 5               6              7            8                 9
+            # ['EdgeId', 'EdgePk', 'EdgeLabel', 'FromVertexId', 'FromVertexPk', 'FromVertexLabel', 'ToVertexId', 'ToVertexPk', 'ToVertexLabel', 'epoch:double']
+            if (row_idx == 0):
+                print(row)
+                print('src|dst|relationship|attributes')
+            else:
+                src   = row[3]
+                dst   = row[6]
+                rel   = row[2]
+                attrs = dict()
+                attrs['src_label'] = row[5]
+                attrs['dst_label'] = row[8]
+                attrs['row_idx']   = row_idx
+                print('{}|{}|{}|{}'.format(src, dst, rel, json.dumps(attrs)))
+
+def read_graphframes_csv():
+    # python main.py read_graphframes_csv graphframes_movie_vertices.csv
+
+    github_dir = os.environ['GITHUB_DIR']
+    repo_path  = 'azure-cosmosdb-gremlin-bulkloader-sample-data/imdb'
+    basename   = sys.argv[2] 
+    infile     = '{}/{}/{}'.format(github_dir, repo_path, basename)
+
+    with open(infile, 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter='|')
+        for row in reader:
+            print(row)
+
 def describe_df(df, msg):
     print('=== describe df: {}'.format(msg))
     print('--- df.head(3)')
@@ -315,6 +415,16 @@ if __name__ == "__main__":
             create_movie_to_person_edges()
         elif func == 'create_person_to_movie_edges':
             create_person_to_movie_edges()
+
+        # bulkloader csv reformatting for graphframes
+        elif func == 'graphframes_movie_vertices':
+            graphframes_movie_vertices()
+        elif func == 'graphframes_person_vertices':
+            graphframes_person_vertices()
+        elif func == 'graphframes_edges':
+            graphframes_edges()
+        elif func == 'read_graphframes_csv':
+            read_graphframes_csv()
         else:
             print('undefined function: {}'.format(func))
     else:

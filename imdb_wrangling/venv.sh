@@ -1,81 +1,39 @@
 #!/bin/bash
 
-# Bash shell script to delete or create the Python Virtual Environment used by this app.
-# Requires Python 3; version 3.7 or higher recommended.
-# Chris Joakim, Microsoft, May 2021
+# Recreate the python virtual environment and reinstall libs on mac/linux.
+# Chris Joakim, Microsoft, January 2022
 
-display_help() {
-    echo "script options:"
-    echo "  ./venv.sh delete"
-    echo "  ./venv.sh create"
-    echo "  ./venv.sh pip_list"
-    echo "  ./venv.sh help"
-}
+# cleanly delete previous venv directory
+mkdir -p venv 
+rm -rf venv 
 
-delete_venv() {
-    echo 'deleting previous venv...'
-    rm -rf bin/
-    rm -rf include/
-    rm -rf lib/
-    rm -rf man/
-    echo 'done'
-}
+echo 'creating new python3 virtual environment in the venv directory ...'
+python3 -m venv venv
 
-create_venv() {
-    echo 'creating new venv ...'
-    python3 -m venv .
-    source bin/activate
-    python --version
-    pip --version
+echo 'activating new venv ...'
+source venv/bin/activate
 
-    echo 'installing/upgrading pip...'
-    pip install --upgrade pip
-    pip --version
+echo 'upgrading pip ...'
+python -m pip install --upgrade pip 
 
-    echo 'installing/upgrading pip-tools...'
-    pip install --upgrade pip-tools
+echo 'uinstall pip-tools ...'
+pip install --upgrade pip-tools
 
-    # echo 'pip-compile requirements.in ...'
-    pip-compile --output-file requirements.txt requirements.in
+echo 'displaying python location and version'
+which python
+python --version
 
-    echo 'pip install requirements.txt ...'
-    pip install -r requirements.txt
+echo 'displaying pip location and version'
+which pip
+pip --version
 
-    pip list --format=columns
+echo 'pip-compile requirements.in ...'
+pip-compile --output-file requirements.txt requirements.in
 
-    echo 'next: source bin/activate ; python --version'
-    echo 'done'
-}
+echo 'pip install requirements.txt ...'
+pip install -q -r requirements.txt
 
-pip_list() {
-    echo 'pip_list ...'
-    pip list --format=columns
-    echo 'done'
-}
+echo 'pip list ...'
+pip list
 
-arg_count=$#
-
-if [ $arg_count -gt 0 ]
-then
-    if [ $1 == "help" ] 
-    then
-        display_help
-    fi
-
-    if [ $1 == "delete" ] 
-    then
-        delete_venv
-    fi
-
-    if [ $1 == "create" ] 
-    then
-        create_venv
-    fi
-
-    if [ $1 == "pip_list" ] 
-    then
-        pip_list
-    fi
-else
-    display_help
-fi
+echo 'done; next -> source venv/bin/activate'
