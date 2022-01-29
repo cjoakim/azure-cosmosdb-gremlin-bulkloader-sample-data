@@ -27,6 +27,5 @@ sleep 2
 echo 'graphframes_edges person_to_movie ...'
 python main.py graphframes_edges loader_person_to_movie_edges.csv > ../imdb/graphframes_person_to_movie_edges.csv
 python main.py read_graphframes_csv graphframes_person_to_movie_edges.csv
-sleep 2
 
 echo 'done'

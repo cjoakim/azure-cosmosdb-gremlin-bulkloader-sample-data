@@ -350,7 +350,6 @@ def graphframes_edges():
             #     0         1           2             3               4                 5               6              7            8                 9
             # ['EdgeId', 'EdgePk', 'EdgeLabel', 'FromVertexId', 'FromVertexPk', 'FromVertexLabel', 'ToVertexId', 'ToVertexPk', 'ToVertexLabel', 'epoch:double']
             if (row_idx == 0):
-                print(row)
                 print('src|dst|relationship|attributes')
             else:
                 src   = row[3]
